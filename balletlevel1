@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>急速芭蕾挑戰 Ballet Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a1a2e;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(255, 0, 128, 0.15), transparent 30%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 255, 0.15), transparent 30%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .font-pixel {
+            font-family: 'Press Start 2P', 'Noto Sans TC', cursive;
+            line-height: 1.5;
+        }
+
+        .neon-title {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 40px #ff00de, 0 0 80px #ff00de;
+            animation: pulsate 1.5s infinite alternate;
+        }
+
+        @keyframes pulsate {
+            100% { text-shadow: 0 0 4px #fff, 0 0 11px #fff, 0 0 19px #ff00de, 0 0 40px #ff00de, 0 0 80px #ff00de; }
+            0% { text-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #ff00de, 0 0 10px #ff00de, 0 0 45px #ff00de; }
+        }
+
+        .btn-game {
+            transition: all 0.2s ease-in-out;
+            border-bottom-width: 4px;
+            text-transform: uppercase;
+        }
+        
+        .btn-game:hover:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+            filter: brightness(1.1);
+        }
+
+        .btn-game:active:not(:disabled) {
+            transform: translateY(4px);
+            border-bottom-width: 0px;
+        }
+
+        .btn-game:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-bottom-width: 0px;
+            transform: translateY(4px);
+        }
+
+        .floating { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .screen-container {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .screen-container.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* 血條與倒數計時條 */
+        .progress-bar-bg {
+            background-color: #374151;
+            border-radius: 9999px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .health-bar-fill {
+            height: 100%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+        }
+        .timer-bar-fill {
+            height: 100%;
+            transition: width 0.1s linear, background-color 0.3s;
+            background: #eab308;
+        }
+
+        /* 分數彈跳動畫 */
+        @keyframes scorePopUp {
+            0% { opacity: 0; transform: translateY(0) scale(0.5); }
+            20% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+            80% { opacity: 1; transform: translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+        }
+        .score-popup {
+            position: absolute;
+            top: 20px;
+            right: 10px;
+            font-weight: 900;
+            font-size: 1.75rem;
+            pointer-events: none;
+            animation: scorePopUp 1.2s ease-out forwards;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        /* Modal 隱藏/顯示 */
+        .modal {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        /* 選中狀態特效 */
+        .btn-selected {
+            box-shadow: 0 0 15px currentColor;
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="screenMenu" class="screen-container active flex-col items-center w-full">
+        <!-- 標題區 -->
+        <header class="text-center mb-10 w-full max-w-4xl floating">
+            <h2 class="text-xl md:text-2xl text-cyan-400 font-bold mb-2 tracking-widest">教材設計：黃翊倫</h2>
+            <h1 class="text-4xl md:text-6xl font-pixel neon-title mt-4 mb-4 leading-tight">急速芭蕾挑戰<br><span class="text-2xl md:text-4xl text-yellow-300">Ballet Check</span></h1>
+        </header>
+
+        <!-- 主要選單區 -->
+        <main class="w-full max-w-3xl bg-gray-900 bg-opacity-80 p-8 rounded-3xl border-4 border-cyan-500 shadow-[0_0_20px_rgba(0,255,255,0.4)]">
+            
+            <div class="mb-8 text-center">
+                <button onclick="goToInstructions()" class="btn-game w-full md:w-2/3 bg-gradient-to-r from-green-400 to-emerald-600 border-green-700 text-white font-bold py-4 px-8 rounded-2xl text-2xl shadow-lg shadow-green-500/50">
+                    🚀 進入教學關卡
+                </button>
+            </div>
+            <hr class="border-gray-600 my-6 border-dashed">
+
+            <!-- 遊戲設定區 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- 選擇對戰人數 -->
+                <div class="bg-gray-800 p-6 rounded-2xl border-2 border-pink-500">
+                    <h3 class="text-xl font-bold text-pink-400 mb-4 text-center font-pixel text-sm md:text-base">選擇對戰人數</h3>
+                    <div class="flex flex-col gap-3">
+                        <button id="btnPlayer1" onclick="setPlayerCount(1)" class="btn-game setting-btn bg-pink-500 border-pink-700 text-white font-bold py-3 px-4 rounded-xl text-pink-500">單人挑戰 (1P)</button>
+                        <button id="btnPlayer2" onclick="setPlayerCount(2)" class="btn-game setting-btn bg-purple-500 border-purple-700 text-white font-bold py-3 px-4 rounded-xl text-purple-500">雙人對戰 (2P)</button>
+                        <button id="btnPlayer4" onclick="setPlayerCount(4)" class="btn-game setting-btn bg-indigo-500 border-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-indigo-500">四人大亂鬥 (4P)</button>
+                    </div>
+                </div>
+
+                <!-- 選擇難度 -->
+                <div class="bg-gray-800 p-6 rounded-2xl border-2 border-yellow-500 flex flex-col">
+                    <h3 class="text-xl font-bold text-yellow-400 mb-4 text-center font-pixel text-sm md:text-base">選擇對手難度</h3>
+                    <div class="flex flex-col gap-4 justify-center flex-1">
+                        <button id="btnDiff1" onclick="setDifficulty(1)" class="btn-game diff-btn bg-yellow-500 border-yellow-700 text-gray-900 font-extrabold py-4 px-4 rounded-xl text-xl text-yellow-500">
+                            ⭐ Level 1 (新手)
+                        </button>
+                        <button id="btnDiff2" onclick="setDifficulty(2)" class="btn-game diff-btn bg-orange-500 border-orange-700 text-white font-extrabold py-4 px-4 rounded-xl text-xl text-orange-500">
+                            ⭐⭐ Level 2 (進階)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 資料統計區 -->
+            <div class="mt-8 text-center">
+                <button id="openStatsBtn" class="btn-game bg-blue-600 hover:bg-blue-500 border-blue-800 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center mx-auto gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    班級錯題統計
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <div id="screenInstructions" class="screen-container flex-col items-center justify-center w-full max-w-3xl bg-gray-900 bg-opacity-95 p-10 rounded-3xl border-4 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.6)]">
+        <h2 class="text-4xl text-green-400 font-pixel mb-6 neon-title">遊戲規則</h2>
+        
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-600 w-full mb-8 text-lg md:text-xl space-y-4">
+            <p class="flex items-start"><span class="text-yellow-400 mr-3">🎮</span> 初始血量為 <strong class="text-blue-400 mx-1">60</strong> 分，先達到 <strong class="text-green-400 mx-1">150</strong> 分者獲勝！</p>
+            <p class="flex items-start"><span class="text-yellow-400 mr-3">⏱️</span> 畫面上方有倒數計時條，每題限時 <strong class="text-red-400 mx-1">10 秒</strong>。</p>
+            <p class="flex items-start"><span class="text-yellow-400 mr-3">💡</span> 系統會出現關鍵字，請盡快判斷屬於哪一種芭蕾風格。</p>
+            <div class="bg-gray-700 p-4 rounded-lg mt-2 text-base space-y-2 border-l-4 border-yellow-500">
+                <p>🏆 <strong class="text-yellow-300">第一名</strong>答對：<span class="text-green-400 font-bold">+15 分</span></p>
+                <p>🥈 <strong class="text-gray-300">第二名</strong>答對：<span class="text-blue-400 font-bold">+5 分</span></p>
+                <p>🥉 <strong class="text-orange-300">其他</strong>答對：<span class="text-gray-400 font-bold">+0 分</span></p>
+                <p>❌ 答錯或超時：<span class="text-red-500 font-bold">-15 分</span> 😭</p>
+            </div>
+        </div>
+
+        <div class="flex gap-4 w-full justify-center">
+            <button onclick="showScreen('screenMenu')" class="btn-game bg-gray-600 hover:bg-gray-500 border-gray-800 text-white font-bold py-4 px-8 rounded-2xl text-xl">
+                返回設定
+            </button>
+            <button onclick="startGame()" class="btn-game bg-gradient-to-r from-yellow-400 to-orange-500 border-orange-700 text-gray-900 font-black py-4 px-12 rounded-2xl text-2xl shadow-lg shadow-orange-500/50 animate-pulse">
+                Let's Go! 🚀
+            </button>
+        </div>
+    </div>
+
+    <div id="screenGame" class="screen-container w-full max-w-5xl flex-col h-full md:h-[90vh] bg-gray-900 bg-opacity-90 p-4 md:p-6 rounded-3xl border-4 border-cyan-500 shadow-2xl">
+        
+        <!-- 頂部資訊列 -->
+        <div class="flex justify-between items-center mb-4 text-gray-300 font-bold text-sm md:text-xl">
+            <div>目標分數: <span class="text-green-400">150</span></div>
+            <div id="roundIndicator" class="text-yellow-400 font-pixel">Round 1</div>
+            <button onclick="showScreen('screenMenu')" class="text-gray-500 hover:text-white text-sm underline">放棄遊戲</button>
+        </div>
+
+        <!-- 玩家狀態區 (會由 JS 動態生成) -->
+        <div id="playersUI" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+            <!-- 玩家卡片範本將插入此處 -->
+        </div>
+
+        <!-- 題目與計時區 -->
+        <div class="flex-1 flex flex-col items-center justify-center bg-gray-800 rounded-2xl border-2 border-gray-600 p-6 mb-6 relative">
+            <div class="w-full h-4 md:h-6 progress-bar-bg mb-8">
+                <div id="timerBar" class="timer-bar-fill w-full"></div>
+            </div>
+            
+            <h3 class="text-xl md:text-2xl text-gray-400 mb-4 text-center">請判斷以下關鍵字屬於哪種芭蕾：</h3>
+            <div id="questionText" class="text-4xl md:text-7xl font-bold text-white tracking-widest text-center neon-title break-words px-4">
+                準備中...
+            </div>
+            <div id="roundResultOverlay" class="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center rounded-2xl hidden z-20">
+                <p id="roundResultText" class="text-3xl md:text-5xl font-bold text-white">結算中...</p>
+            </div>
+        </div>
+
+        <!-- 答題按鈕區 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-auto">
+            <button onclick="submitAnswer('宮廷芭蕾', false)" class="game-btn btn-game bg-purple-600 hover:bg-purple-500 border-purple-800 text-white font-bold py-6 px-2 rounded-2xl text-lg md:text-2xl">宮廷芭蕾</button>
+            <button onclick="submitAnswer('浪漫芭蕾', false)" class="game-btn btn-game bg-pink-500 hover:bg-pink-400 border-pink-700 text-white font-bold py-6 px-2 rounded-2xl text-lg md:text-2xl">浪漫芭蕾</button>
+            <button onclick="submitAnswer('古典芭蕾', false)" class="game-btn btn-game bg-blue-600 hover:bg-blue-500 border-blue-800 text-white font-bold py-6 px-2 rounded-2xl text-lg md:text-2xl">古典芭蕾</button>
+            <button onclick="submitAnswer('現代芭蕾', false)" class="game-btn btn-game bg-emerald-600 hover:bg-emerald-500 border-emerald-800 text-white font-bold py-6 px-2 rounded-2xl text-lg md:text-2xl">現代芭蕾</button>
+        </div>
+    </div>
+
+    <div id="screenGameOver" class="screen-container flex-col items-center justify-center w-full max-w-2xl bg-gray-900 bg-opacity-95 p-12 rounded-3xl border-4 border-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.6)]">
+        <h2 id="winnerTitle" class="text-5xl md:text-6xl text-yellow-400 font-pixel mb-8 neon-title text-center leading-tight">🏆 玩家獲勝！</h2>
+        
+        <div id="finalScores" class="w-full bg-gray-800 p-6 rounded-xl border border-gray-600 mb-8 space-y-4">
+            <!-- 最終分數列表 -->
+        </div>
+
+        <button onclick="resetToMenu()" class="btn-game bg-cyan-600 hover:bg-cyan-500 border-cyan-800 text-white font-bold py-4 px-10 rounded-2xl text-2xl">
+            🔄 回到主選單
+        </button>
+    </div>
+
+    <div id="statsModal" class="modal fixed inset-0 bg-black bg-opacity-80 z-50 items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border-4 border-blue-500 rounded-3xl w-full max-w-2xl overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.6)] transform scale-95 transition-transform duration-300" id="modalContent">
+            <div class="bg-blue-600 p-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold font-pixel text-white">📊 班級錯題統計</h2>
+                <button id="closeStatsBtn" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-left text-gray-200 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-700 text-blue-300 font-bold">
+                            <th class="p-3 border-b-2 border-gray-600 rounded-tl-lg">題目 (芭蕾動作)</th>
+                            <th class="p-3 border-b-2 border-gray-600">正確屬性</th>
+                            <th class="p-3 border-b-2 border-gray-600 text-center rounded-tr-lg">學生誤判次數</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Plié (蹲)</td>
+                            <td class="p-3">屈伸動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">15</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Tendu (擦地)</td>
+                            <td class="p-3">延伸動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">12</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Jeté (拋)</td>
+                            <td class="p-3">跳躍動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">8</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Pirouette (旋轉)</td>
+                            <td class="p-3">旋轉動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">25</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-gray-900 text-center text-sm text-gray-400">
+                資料更新時間：即時
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOAL_SCORE = 150;
+        const INITIAL_SCORE = 60;
+        const TIME_LIMIT = 10000; // 10秒 = 10000ms
+
+        let settings = { playerCount: 1, difficulty: 1 };
+        let players = [];
+        let currentQuestion = null;
+        let round = 1;
+        
+        let timerInterval;
+        let botTimeouts = [];
+        let timeLeft = TIME_LIMIT;
+        let roundActive = false;
+        let answersGiven = 0; // 本回合已有多少人答題 (決定名次)
+
+        // 題目資料庫 (4種芭蕾)
+        const questionBank = [
+            { text: "路易十四", category: "宮廷芭蕾" },
+            { text: "凡爾賽宮", category: "宮廷芭蕾" },
+            { text: "太陽王", category: "宮廷芭蕾" },
+            { text: "幾何圖形隊形", category: "宮廷芭蕾" },
+            { text: "芭蕾五個基本位置", category: "宮廷芭蕾" },
+            { text: "仙女 (La Sylphide)", category: "浪漫芭蕾" },
+            { text: "吉賽兒 (Giselle)", category: "浪漫芭蕾" },
+            { text: "白色長紗裙 (Romantic Tutu)", category: "浪漫芭蕾" },
+            { text: "腳尖鞋初現", category: "浪漫芭蕾" },
+            { text: "幽靈與精靈主題", category: "浪漫芭蕾" },
+            { text: "天鵝湖", category: "古典芭蕾" },
+            { text: "睡美人", category: "古典芭蕾" },
+            { text: "胡桃鉗", category: "古典芭蕾" },
+            { text: "柴可夫斯基", category: "古典芭蕾" },
+            { text: "短硬紗裙 (Classical Tutu)", category: "古典芭蕾" },
+            { text: "32圈揮鞭轉", category: "古典芭蕾" },
+            { text: "斯特拉溫斯基", category: "現代芭蕾" },
+            { text: "俄羅斯芭蕾舞團", category: "現代芭蕾" },
+            { text: "春之祭", category: "現代芭蕾" },
+            { text: "無劇情/抽象表達", category: "現代芭蕾" },
+            { text: "不拘泥於硬鞋", category: "現代芭蕾" }
+        ];
+
+        // 預設選擇
+        setPlayerCount(1);
+        setDifficulty(1);
+
+        function setPlayerCount(count) {
+            settings.playerCount = count;
+            document.querySelectorAll('[id^="btnPlayer"]').forEach(btn => btn.classList.remove('btn-selected', 'ring-4', 'ring-white'));
+            document.getElementById(`btnPlayer${count}`).classList.add('btn-selected', 'ring-4', 'ring-white');
+        }
+
+        function setDifficulty(level) {
+            settings.difficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('btn-selected', 'ring-4', 'ring-white'));
+            document.getElementById(`btnDiff${level}`).classList.add('btn-selected', 'ring-4', 'ring-white');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen-container').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function goToInstructions() {
+            showScreen('screenInstructions');
+        }
+
+        function resetToMenu() {
+            showScreen('screenMenu');
+        }
+
+        function startGame() {
+            showScreen('screenGame');
+            round = 1;
+            players = [];
+            
+            // 建立玩家資料 (第一位永遠是真實玩家)
+            const botNames = ['對手 蘿莎', '對手 柴可夫', '對手 伊凡'];
+            for(let i=0; i<settings.playerCount; i++) {
+                players.push({
+                    id: `p${i+1}`,
+                    name: i === 0 ? '玩家 (您)' : botNames[i-1],
+                    score: INITIAL_SCORE,
+                    isHuman: i === 0,
+                    hasAnswered: false,
+                    answerTime: 0,
+                    isCorrect: false,
+                    answerCategory: null
+                });
+            }
+
+            renderPlayersUI();
+            startNextRound();
+        }
+
+        function renderPlayersUI() {
+            const container = document.getElementById('playersUI');
+            container.innerHTML = '';
+            
+            players.forEach(p => {
+                // 計算血條長度 (最高150)，並根據分數改變顏色
+                let percent = Math.max(0, Math.min(100, (p.score / GOAL_SCORE) * 100));
+                let barColorClass = "from-blue-500 to-cyan-400";
+                if(p.score < 30) barColorClass = "from-red-600 to-red-400"; // 危險
+                else if (p.score >= 100) barColorClass = "from-green-500 to-emerald-400"; // 接近勝利
+
+                const cardHtml = `
+                    <div id="card_${p.id}" class="bg-gray-800 p-3 md:p-4 rounded-xl border-2 ${p.isHuman ? 'border-cyan-400' : 'border-gray-600'} relative flex flex-col">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-sm md:text-lg ${p.isHuman ? 'text-cyan-400' : 'text-gray-300'}">${p.name}</span>
+                            <span id="score_${p.id}" class="font-pixel text-xs md:text-sm text-yellow-300">${p.score}</span>
+                        </div>
+                        <div class="h-3 md:h-4 progress-bar-bg mb-2">
+                            <div id="bar_${p.id}" class="health-bar-fill bg-gradient-to-r ${barColorClass}" style="width: ${percent}%"></div>
+                        </div>
+                        <div id="status_${p.id}" class="text-xs md:text-sm text-center font-bold text-gray-500 mt-auto h-5">準備中...</div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        function startNextRound() {
+            document.getElementById('roundIndicator').innerText = `Round ${round}`;
+            document.getElementById('roundResultOverlay').classList.add('hidden');
+            
+            // 隨機挑選題目
+            currentQuestion = questionBank[Math.floor(Math.random() * questionBank.length)];
+            document.getElementById('questionText').innerText = currentQuestion.text;
+
+            // 重置玩家狀態與UI
+            answersGiven = 0;
+            roundActive = true;
+            players.forEach(p => {
+                p.hasAnswered = false;
+                p.answerTime = 0;
+                p.isCorrect = false;
+                p.answerCategory = null;
+                document.getElementById(`status_${p.id}`).innerText = "思考中...";
+                document.getElementById(`status_${p.id}`).className = "text-xs md:text-sm text-center font-bold text-yellow-500 mt-auto h-5 animate-pulse";
+            });
+
+            // 啟用按鈕
+            document.querySelectorAll('.game-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+
+            // 啟動計時器
+            timeLeft = TIME_LIMIT;
+            updateTimerBar();
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft -= 50; // 每 50ms 更新一次進度條，比較平滑
+                updateTimerBar();
+                if (timeLeft <= 0) {
+                    endRound(true); // 時間到強制結束
+                }
+            }, 50);
+
+            // 排定機器人對手作答
+            clearBotTimeouts();
+            players.filter(p => !p.isHuman).forEach(bot => {
+                scheduleBotAnswer(bot);
+            });
+        }
+
+        function updateTimerBar() {
+            const bar = document.getElementById('timerBar');
+            let percent = (timeLeft / TIME_LIMIT) * 100;
+            bar.style.width = `${percent}%`;
+            
+            if (percent < 30) {
+                bar.style.backgroundColor = '#ef4444'; // 紅色警告
+            } else {
+                bar.style.backgroundColor = '#eab308'; // 預設黃色
+            }
+        }
+
+        function scheduleBotAnswer(bot) {
+            // Level 1: 答對率 50%, 反應時間 3~8秒
+            // Level 2: 答對率 80%, 反應時間 2~5秒
+            let accuracy = settings.difficulty === 1 ? 0.5 : 0.8;
+            let minTime = settings.difficulty === 1 ? 3000 : 2000;
+            let maxTime = settings.difficulty === 1 ? 8000 : 5000;
+            
+            let thinkTime = Math.random() * (maxTime - minTime) + minTime;
+
+            let tid = setTimeout(() => {
+                if(!roundActive) return;
+
+                let isCorrect = Math.random() < accuracy;
+                let chosenCategory = currentQuestion.category;
+                
+                if(!isCorrect) {
+                    const options = ["宮廷芭蕾", "浪漫芭蕾", "古典芭蕾", "現代芭蕾"].filter(c => c !== chosenCategory);
+                    chosenCategory = options[Math.floor(Math.random() * options.length)];
+                }
+                submitAnswer(chosenCategory, bot.id);
+
+            }, thinkTime);
+            botTimeouts.push(tid);
+        }
+
+        function clearBotTimeouts() {
+            botTimeouts.forEach(clearTimeout);
+            botTimeouts = [];
+        }
+
+        function submitAnswer(category, botId = null) {
+            if(!roundActive) return;
+
+            let player = null;
+            if (botId) {
+                player = players.find(p => p.id === botId);
+            } else {
+                // 玩家點擊
+                player = players.find(p => p.isHuman);
+                // 鎖定玩家按鈕
+                document.querySelectorAll('.game-btn').forEach(btn => btn.disabled = true);
+            }
+
+            if(player && !player.hasAnswered) {
+                player.hasAnswered = true;
+                player.answerTime = TIME_LIMIT - timeLeft; // 紀錄花費時間
+                player.answerCategory = category;
+                player.isCorrect = (category === currentQuestion.category);
+                
+                answersGiven++;
+                player.rank = answersGiven; // 紀錄名次 (第一名、第二名...)
+
+                // 更新狀態顯示
+                const statusEl = document.getElementById(`status_${player.id}`);
+                statusEl.innerText = "已作答！";
+                statusEl.className = "text-xs md:text-sm text-center font-bold text-gray-300 mt-auto h-5";
+            }
+
+            // 如果所有人都答完了，提前結束回合
+            if (players.every(p => p.hasAnswered)) {
+                endRound(false);
+            }
+        }
+
+        function endRound(isTimeout) {
+            roundActive = false;
+            clearInterval(timerInterval);
+            clearBotTimeouts();
+            
+            // 鎖定按鈕
+            document.querySelectorAll('.game-btn').forEach(btn => btn.disabled = true);
+
+            // 計算分數
+            players.forEach(p => {
+                let roundScore = 0;
+                let scoreText = "";
+                let textColor = "text-gray-400";
+
+                if (!p.hasAnswered) {
+                    roundScore = -15; // 超時未答
+                    scoreText = "-15";
+                    textColor = "text-red-500";
+                    document.getElementById(`status_${p.id}`).innerText = "❌ 超時";
+                    document.getElementById(`status_${p.id}`).classList.add("text-red-500");
+                } else if (!p.isCorrect) {
+                    roundScore = -15; // 答錯
+                    scoreText = "-15";
+                    textColor = "text-red-500";
+                    document.getElementById(`status_${p.id}`).innerText = `❌ 錯誤 (${p.answerCategory})`;
+                    document.getElementById(`status_${p.id}`).classList.add("text-red-500");
+                } else {
+                    // 答對了，看名次給分
+                    document.getElementById(`status_${p.id}`).innerText = `✅ 正確!`;
+                    document.getElementById(`status_${p.id}`).classList.add("text-green-400");
+                    
+                    if (p.rank === 1) {
+                        roundScore = 15;
+                        scoreText = "+15 (1st)";
+                        textColor = "text-green-400";
+                    } else if (p.rank === 2 && settings.playerCount >= 2) {
+                        roundScore = 5;
+                        scoreText = "+5 (2nd)";
+                        textColor = "text-blue-400";
+                    } else {
+                        roundScore = 0;
+                        scoreText = "+0";
+                        textColor = "text-gray-400";
+                    }
+                }
+
+                // 套用分數並彈出動畫數字
+                p.score += roundScore;
+                showScorePopup(p.id, scoreText, textColor);
+            });
+
+            // 更新畫面血條與分數數字
+            renderPlayersUI();
+
+            // 顯示正確答案覆蓋層
+            const overlay = document.getElementById('roundResultOverlay');
+            const overlayText = document.getElementById('roundResultText');
+            overlayText.innerHTML = `正確答案：<br><span class="text-cyan-400 mt-2 block">${currentQuestion.category}</span>`;
+            overlay.classList.remove('hidden');
+
+            // 檢查勝負條件 (是否有人達到 150)
+            setTimeout(() => {
+                let winner = players.find(p => p.score >= GOAL_SCORE);
+                if (winner) {
+                    handleGameOver();
+                } else {
+                    round++;
+                    startNextRound();
+                }
+            }, 3000); // 停留3秒看結果
+        }
+
+        function showScorePopup(playerId, text, colorClass) {
+            const card = document.getElementById(`card_${playerId}`);
+            const popup = document.createElement('div');
+            popup.className = `score-popup ${colorClass}`;
+            popup.innerText = text;
+            card.appendChild(popup);
+            
+            setTimeout(() => {
+                if(card.contains(popup)) card.removeChild(popup);
+            }, 1200);
+        }
+
+        function handleGameOver() {
+            // 排序找最高分
+            players.sort((a, b) => b.score - a.score);
+            
+            const winner = players[0];
+            const titleEl = document.getElementById('winnerTitle');
+            if (winner.isHuman) {
+                titleEl.innerText = "🏆 恭喜獲勝！";
+                titleEl.className = "text-5xl md:text-6xl text-green-400 font-pixel mb-8 neon-title text-center leading-tight";
+            } else {
+                titleEl.innerText = "💀 挑戰失敗...";
+                titleEl.className = "text-5xl md:text-6xl text-red-500 font-pixel mb-8 neon-title text-center leading-tight";
+            }
+
+            const scoresContainer = document.getElementById('finalScores');
+            scoresContainer.innerHTML = '';
+            
+            players.forEach((p, index) => {
+                let medal = index === 0 ? "🥇" : (index === 1 ? "🥈" : (index === 2 ? "🥉" : ""));
+                scoresContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-gray-700 p-4 rounded-lg text-xl md:text-2xl">
+                        <span>${medal} ${p.name}</span>
+                        <span class="font-pixel text-yellow-400">${p.score} pts</span>
+                    </div>
+                `;
+            });
+
+            showScreen('screenGameOver');
+        }
+
+        const statsModal = document.getElementById('statsModal');
+        const modalContent = document.getElementById('modalContent');
+
+        document.getElementById('openStatsBtn').addEventListener('click', () => {
+            statsModal.classList.add('active');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        });
+
+        document.getElementById('closeStatsBtn').addEventListener('click', closeModal);
+        statsModal.addEventListener('click', (e) => {
+            if (e.target === statsModal) closeModal();
+        });
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => { statsModal.classList.remove('active'); }, 300);
+        }
+
+        // 所有按鈕點擊微反饋
+        document.addEventListener('click', (e) => {
+            if(e.target.tagName === 'BUTTON' && !e.target.disabled) {
+                const originalFilter = e.target.style.filter;
+                e.target.style.filter = 'brightness(1.3)';
+                setTimeout(() => {
+                    e.target.style.filter = originalFilter;
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
