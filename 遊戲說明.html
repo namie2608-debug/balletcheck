@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>芭蕾知識大挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            touch-action: manipulation;
+            overflow: hidden; /* Prevent scrolling during gameplay */
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+            height: 24px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.875rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Gradient colors for different players */
+        .fill-player { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .fill-ai1 { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .fill-ai2 { background: linear-gradient(90deg, #10b981, #059669); }
+
+        .timer-bar-container {
+            width: 100%;
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .timer-bar-fill {
+            height: 100%;
+            background-color: #ef4444;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .option-btn {
+            transition: all 0.2s;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .option-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .option-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Floating text animation for score changes */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-30px) scale(1.2); }
+        }
+        .score-popup {
+            position: absolute;
+            font-weight: 900;
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 50;
+        }
+
+        /* Shake animation for wrong answers */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center text-slate-800 relative">
+
+    <!-- Welcome / Rules Screen -->
+    <div id="welcomeScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="glass-panel rounded-3xl p-8 max-w-lg w-full text-center relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute -top-16 -right-16 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70"></div>
+            <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70"></div>
+            
+            <h1 class="text-3xl md:text-4xl font-black mb-6 text-slate-800 relative z-10">芭蕾知識大挑戰</h1>
+            
+            <div class="text-left space-y-4 mb-8 bg-white/60 p-6 rounded-2xl relative z-10">
+                <h2 class="font-bold text-lg border-b-2 border-indigo-200 pb-2 mb-3">📜 遊戲規則</h2>
+                <ul class="list-disc pl-5 space-y-2 text-sm md:text-base">
+                    <li><span class="font-bold text-indigo-600">目標：</span>玩家初始血量為 60，先達到 <span class="font-bold text-red-500">150分</span> 者獲勝！若扣至 0 則淘汰。</li>
+                    <li><span class="font-bold text-indigo-600">玩法：</span>畫面上會出現關鍵字，請快速判斷它屬於哪一個芭蕾時期。</li>
+                    <li><span class="font-bold text-indigo-600">時間：</span>每題限時 <span class="font-bold text-red-500">10秒</span>。</li>
+                    <li><span class="font-bold text-indigo-600">計分：</span>
+                        <ul class="list-circle pl-5 mt-1 space-y-1 text-slate-600">
+                            <li>第一名答對：<span class="text-green-600 font-bold">+15 分</span></li>
+                            <li>第二名答對：<span class="text-green-500 font-bold">+5 分</span></li>
+                            <li>其他名次答對：<span class="text-gray-500 font-bold">+0 分</span></li>
+                            <li>答錯或超時：<span class="text-red-500 font-bold">-15 分</span></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <button id="startBtn" class="relative z-10 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-xl py-4 px-12 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all w-full md:w-auto ring-4 ring-purple-300 ring-opacity-50">
+                Let's Go! 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="gameScreen" class="w-full max-w-4xl h-full md:h-[90vh] glass-panel md:rounded-3xl flex flex-col hidden shadow-2xl relative">
+        
+        <!-- Header: Round Info -->
+        <div class="p-4 border-b border-white/40 flex justify-between items-center bg-white/30 md:rounded-t-3xl">
+            <div class="font-bold text-slate-700 text-lg">回合：<span id="roundCounter">1</span></div>
+            <div class="font-bold text-indigo-600 text-lg">目標分：150</div>
+        </div>
+
+        <!-- Middle: Players Status Area -->
+        <div class="flex-1 p-4 md:p-6 flex flex-col gap-4 overflow-y-auto">
+            
+            <!-- Player 1 (User) -->
+            <div class="bg-white/60 p-4 rounded-2xl shadow-sm relative">
+                <div class="flex justify-between mb-2">
+                    <span class="font-bold flex items-center gap-2">
+                        <span class="text-2xl">😎</span> 你 (玩家)
+                    </span>
+                    <span id="userScoreText" class="font-bold text-blue-600">60 / 150</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="userProgressBar" class="progress-bar-fill fill-player" style="width: 40%;">60</div>
+                </div>
+                <div id="userFeedback" class="absolute top-2 right-4 text-sm font-bold opacity-0 transition-opacity"></div>
+            </div>
+
+            <!-- Player 2 (AI 1) -->
+            <div class="bg-white/50 p-4 rounded-2xl shadow-sm relative opacity-90">
+                <div class="flex justify-between mb-2">
+                    <span class="font-bold flex items-center gap-2 text-slate-600">
+                        <span class="text-2xl">🤖</span> 芭蕾大師 (電腦)
+                    </span>
+                    <span id="ai1ScoreText" class="font-bold text-amber-600">60 / 150</span>
+                </div>
+                <div class="progress-bar-container bg-slate-200">
+                    <div id="ai1ProgressBar" class="progress-bar-fill fill-ai1" style="width: 40%;">60</div>
+                </div>
+                <div id="ai1Feedback" class="absolute top-2 right-4 text-sm font-bold opacity-0 transition-opacity"></div>
+            </div>
+
+            <!-- Player 3 (AI 2) -->
+            <div class="bg-white/50 p-4 rounded-2xl shadow-sm relative opacity-90">
+                <div class="flex justify-between mb-2">
+                    <span class="font-bold flex items-center gap-2 text-slate-600">
+                        <span class="text-2xl">👽</span> 舞評家 (電腦)
+                    </span>
+                    <span id="ai2ScoreText" class="font-bold text-emerald-600">60 / 150</span>
+                </div>
+                <div class="progress-bar-container bg-slate-200">
+                    <div id="ai2ProgressBar" class="progress-bar-fill fill-ai2" style="width: 40%;">60</div>
+                </div>
+                <div id="ai2Feedback" class="absolute top-2 right-4 text-sm font-bold opacity-0 transition-opacity"></div>
+            </div>
+
+        </div>
+
+        <!-- Bottom: Question and Answers Area -->
+        <div class="p-6 bg-white/70 backdrop-blur-md md:rounded-b-3xl border-t border-white/50 flex flex-col items-center shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-10">
+            
+            <!-- Timer -->
+            <div class="w-full mb-4">
+                <div class="flex justify-between text-sm font-bold text-slate-500 mb-1">
+                    <span>剩餘時間</span>
+                    <span id="timerText" class="text-red-500">10.0s</span>
+                </div>
+                <div class="timer-bar-container">
+                    <div id="timerBar" class="timer-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div id="questionCard" class="w-full bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-2xl shadow-inner mb-6 text-center border border-indigo-100 min-h-[120px] flex items-center justify-center">
+                <h3 class="text-sm text-indigo-500 font-bold mb-2 absolute top-4">請判斷以下關鍵字屬於哪個時期：</h3>
+                <h2 id="keywordDisplay" class="text-3xl md:text-4xl font-black text-slate-800 tracking-wider mt-4">準備中...</h2>
+            </div>
+
+            <!-- Options Grid -->
+            <div class="grid grid-cols-2 gap-3 md:gap-4 w-full">
+                <button class="option-btn bg-white border-2 border-pink-200 text-pink-700 font-bold py-3 md:py-4 rounded-xl text-lg shadow-sm hover:bg-pink-50" data-answer="宮廷芭蕾">宮廷芭蕾</button>
+                <button class="option-btn bg-white border-2 border-blue-200 text-blue-700 font-bold py-3 md:py-4 rounded-xl text-lg shadow-sm hover:bg-blue-50" data-answer="浪漫芭蕾">浪漫芭蕾</button>
+                <button class="option-btn bg-white border-2 border-amber-200 text-amber-700 font-bold py-3 md:py-4 rounded-xl text-lg shadow-sm hover:bg-amber-50" data-answer="古典芭蕾">古典芭蕾</button>
+                <button class="option-btn bg-white border-2 border-emerald-200 text-emerald-700 font-bold py-3 md:py-4 rounded-xl text-lg shadow-sm hover:bg-emerald-50" data-answer="現代芭蕾">現代芭蕾</button>
+            </div>
+            
+            <!-- Result Overlay (Shows briefly after answering) -->
+            <div id="roundResultOverlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm z-20 hidden flex-col items-center justify-center rounded-b-3xl">
+                <div id="roundResultIcon" class="text-6xl mb-2">✅</div>
+                <h2 id="roundResultText" class="text-2xl font-black text-slate-800 mb-1">答對了！</h2>
+                <p id="roundResultDetail" class="text-lg font-bold text-indigo-600">第一名 +15分</p>
+                <p id="correctAnswerDisplay" class="mt-2 text-slate-500 text-sm hidden">正確答案是：<span class="font-bold text-slate-700"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md hidden p-4">
+        <div class="glass-panel rounded-3xl p-8 max-w-md w-full text-center">
+            <div id="gameOverIcon" class="text-7xl mb-4">🏆</div>
+            <h1 id="gameOverTitle" class="text-3xl font-black mb-2 text-slate-800">遊戲結束</h1>
+            <p id="gameOverMsg" class="text-lg text-slate-600 mb-8 font-bold">恭喜你率先達到 150 分！</p>
+            
+            <div class="space-y-3 mb-8">
+                <div class="flex justify-between items-center bg-white/50 p-3 rounded-lg">
+                    <span>😎 你</span>
+                    <span id="finalScoreUser" class="font-bold text-xl">150</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/50 p-3 rounded-lg">
+                    <span>🤖 芭蕾大師</span>
+                    <span id="finalScoreAi1" class="font-bold text-xl text-slate-600">120</span>
+                </div>
+                <div class="flex justify-between items-center bg-white/50 p-3 rounded-lg">
+                    <span>👽 舞評家</span>
+                    <span id="finalScoreAi2" class="font-bold text-xl text-slate-600">80</span>
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="bg-slate-800 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-slate-700 transition w-full">
+                再玩一次 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game Data: Keywords for each era
+        const balletData = [
+            // 宮廷芭蕾 (Court Ballet)
+            { word: "路易十四", type: "宮廷芭蕾" },
+            { word: "凱薩琳·梅迪西", type: "宮廷芭蕾" },
+            { word: "巴洛克舞蹈", type: "宮廷芭蕾" },
+            { word: "皇家舞蹈學院", type: "宮廷芭蕾" },
+            { word: "王公貴族", type: "宮廷芭蕾" },
+            { word: "太陽王", type: "宮廷芭蕾" },
+            // 浪漫芭蕾 (Romantic Ballet)
+            { word: "吉賽兒 (Giselle)", type: "浪漫芭蕾" },
+            { word: "仙女 (La Sylphide)", type: "浪漫芭蕾" },
+            { word: "白色芭蕾", type: "浪漫芭蕾" },
+            { word: "硬鞋 (Pointe shoe) 雛形", type: "浪漫芭蕾" },
+            { word: "超自然與精靈", type: "浪漫芭蕾" },
+            { word: "淒美愛情", type: "浪漫芭蕾" },
+            // 古典芭蕾 (Classical Ballet)
+            { word: "天鵝湖", type: "古典芭蕾" },
+            { word: "睡美人", type: "古典芭蕾" },
+            { word: "胡桃鉗", type: "古典芭蕾" },
+            { word: "柴可夫斯基", type: "古典芭蕾" },
+            { word: "佩提帕 (Marius Petipa)", type: "古典芭蕾" },
+            { word: "大雙人舞 (Grand Pas de Deux)", type: "古典芭蕾" },
+            { word: "嚴格規範與技巧", type: "古典芭蕾" },
+            { word: "俄羅斯帝國", type: "古典芭蕾" },
+            // 現代芭蕾 (Contemporary Ballet)
+            { word: "巴蘭欽 (George Balanchine)", type: "現代芭蕾" },
+            { word: "無劇情芭蕾", type: "現代芭蕾" },
+            { word: "空間切割", type: "現代芭蕾" },
+            { word: "融合現代舞", type: "現代芭蕾" },
+            { word: "打破對稱", type: "現代芭蕾" },
+            { word: "自由奔放肢體", type: "現代芭蕾" }
+        ];
+
+        // Game State
+        const INITIAL_SCORE = 60;
+        const TARGET_SCORE = 150;
+        const TIME_LIMIT = 10000; // 10 seconds in milliseconds
+        
+        let state = {
+            round: 0,
+            currentQuestion: null,
+            timer: null,
+            timeRemaining: TIME_LIMIT,
+            questionStartTime: 0,
+            isAnsweringAllowed: false,
+            players: {
+                user: { id: 'user', name: '你', score: INITIAL_SCORE, el: 'userProgressBar', textEl: 'userScoreText', time: null },
+                ai1: { id: 'ai1', name: '芭蕾大師', score: INITIAL_SCORE, el: 'ai1ProgressBar', textEl: 'ai1ScoreText', time: null },
+                ai2: { id: 'ai2', name: '舞評家', score: INITIAL_SCORE, el: 'ai2ProgressBar', textEl: 'ai2ScoreText', time: null }
+            }
+        };
+
+        // DOM Elements
+        const screens = {
+            welcome: document.getElementById('welcomeScreen'),
+            game: document.getElementById('gameScreen'),
+            gameOver: document.getElementById('gameOverScreen')
+        };
+        const els = {
+            keyword: document.getElementById('keywordDisplay'),
+            timerBar: document.getElementById('timerBar'),
+            timerText: document.getElementById('timerText'),
+            roundCounter: document.getElementById('roundCounter'),
+            options: document.querySelectorAll('.option-btn'),
+            overlay: document.getElementById('roundResultOverlay'),
+            overlayIcon: document.getElementById('roundResultIcon'),
+            overlayText: document.getElementById('roundResultText'),
+            overlayDetail: document.getElementById('roundResultDetail'),
+            correctAnswerDisplay: document.getElementById('correctAnswerDisplay')
+        };
+
+        function initGame() {
+            document.getElementById('startBtn').addEventListener('click', () => {
+                screens.welcome.classList.add('hidden');
+                screens.game.classList.remove('hidden');
+                startNextRound();
+            });
+
+            // Bind option buttons
+            els.options.forEach(btn => {
+                btn.addEventListener('click', (e) => handleUserAnswer(e.target.dataset.answer));
+            });
+        }
+
+        function startNextRound() {
+            state.round++;
+            els.roundCounter.textContent = state.round;
+            els.overlay.classList.add('hidden');
+            els.correctAnswerDisplay.classList.add('hidden');
+            
+            // Reset player turn times
+            Object.values(state.players).forEach(p => p.time = null);
+
+            // Pick a random question
+            const randomIndex = Math.floor(Math.random() * balletData.length);
+            state.currentQuestion = balletData[randomIndex];
+            
+            // UI Setup
+            els.keyword.textContent = state.currentQuestion.word;
+            els.keyword.classList.remove('shake');
+            setOptionsEnabled(true);
+            
+            // Start Timer
+            state.timeRemaining = TIME_LIMIT;
+            state.questionStartTime = Date.now();
+            state.isAnsweringAllowed = true;
+            updateTimerUI();
+            
+            // Simulate AI planning their answers
+            simulateAIAnticipation();
+
+            state.timer = requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop() {
+            if (!state.isAnsweringAllowed) return;
+
+            const now = Date.now();
+            const elapsed = now - state.questionStartTime;
+            state.timeRemaining = Math.max(0, TIME_LIMIT - elapsed);
+            
+            updateTimerUI();
+
+            if (state.timeRemaining <= 0) {
+                handleTimeOut();
+            } else {
+                state.timer = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function updateTimerUI() {
+            const percentage = (state.timeRemaining / TIME_LIMIT) * 100;
+            els.timerBar.style.width = `${percentage}%`;
+            els.timerText.textContent = (state.timeRemaining / 1000).toFixed(1) + 's';
+            
+            if (percentage < 30) {
+                els.timerBar.style.backgroundColor = '#ef4444'; // Red
+                els.timerText.classList.add('text-red-500');
+            } else if (percentage < 60) {
+                els.timerBar.style.backgroundColor = '#f59e0b'; // Amber
+                els.timerText.classList.remove('text-red-500');
+                els.timerText.style.color = '#f59e0b';
+            } else {
+                els.timerBar.style.backgroundColor = '#3b82f6'; // Blue
+                els.timerText.style.color = '#64748b'; // Slate
+            }
+        }
+
+        function setOptionsEnabled(enabled) {
+            els.options.forEach(btn => btn.disabled = !enabled);
+        }
+
+        function simulateAIAnticipation() {
+            // Determine randomly if AI will answer correctly and how fast
+            // AI 1 is generally better/faster
+            scheduleAI('ai1', 1000 + Math.random() * 4000, Math.random() > 0.2); 
+            // AI 2 is slightly slower, more error-prone
+            scheduleAI('ai2', 2000 + Math.random() * 5000, Math.random() > 0.4);
+        }
+
+        function scheduleAI(aiId, delayMs, willBeCorrect) {
+            setTimeout(() => {
+                // Only act if the round is still active and AI hasn't answered yet
+                if (state.isAnsweringAllowed && state.players[aiId].time === null) {
+                    state.players[aiId].time = Date.now() - state.questionStartTime;
+                    state.players[aiId].isCorrect = willBeCorrect;
+                    showFeedback(aiId, "已作答", "text-slate-500");
+                }
+            }, delayMs);
+        }
+
+        function handleUserAnswer(selectedType) {
+            if (!state.isAnsweringAllowed) return;
+            
+            state.isAnsweringAllowed = false;
+            cancelAnimationFrame(state.timer);
+            setOptionsEnabled(false);
+
+            const isCorrect = selectedType === state.currentQuestion.type;
+            const answerTime = Date.now() - state.questionStartTime;
+            
+            state.players.user.time = answerTime;
+            state.players.user.isCorrect = isCorrect;
+
+            processRoundResults(isCorrect);
+        }
+
+        function handleTimeOut() {
+            state.isAnsweringAllowed = false;
+            cancelAnimationFrame(state.timer);
+            setOptionsEnabled(false);
+            
+            state.players.user.time = TIME_LIMIT;
+            state.players.user.isCorrect = false;
+
+            processRoundResults(false, true);
+        }
+
+        function processRoundResults(userCorrect, isTimeout = false) {
+            // 1. Force AI to have times if they haven't answered yet (timeout scenarios)
+            ['ai1', 'ai2'].forEach(id => {
+                if (state.players[id].time === null) {
+                    state.players[id].time = TIME_LIMIT;
+                    state.players[id].isCorrect = false;
+                }
+            });
+
+            // 2. Rank players who answered correctly based on time
+            let correctPlayers = Object.values(state.players)
+                .filter(p => p.isCorrect)
+                .sort((a, b) => a.time - b.time);
+
+            // 3. Assign scores
+            let userScoreChange = 0;
+            let userRankMsg = "";
+
+            Object.values(state.players).forEach(p => {
+                let scoreDiff = 0;
+                let popText = "";
+                let popColor = "";
+
+                if (!p.isCorrect) {
+                    // Wrong or Timeout
+                    scoreDiff = -15;
+                    popText = "-15";
+                    popColor = "text-red-500";
+                    if(p.id === 'user') {
+                        userScoreChange = -15;
+                        userRankMsg = isTimeout ? "超時未答" : "答錯了";
+                    }
+                } else {
+                    // Correct, find rank
+                    const rank = correctPlayers.findIndex(cp => cp.id === p.id);
+                    if (rank === 0) {
+                        scoreDiff = 15;
+                        popText = "+15";
+                        popColor = "text-green-500";
+                        if(p.id === 'user') { userScoreChange = 15; userRankMsg = "第一名！"; }
+                    } else if (rank === 1) {
+                        scoreDiff = 5;
+                        popText = "+5";
+                        popColor = "text-green-400";
+                        if(p.id === 'user') { userScoreChange = 5; userRankMsg = "第二名！"; }
+                    } else {
+                        scoreDiff = 0;
+                        popText = "+0";
+                        popColor = "text-slate-400";
+                        if(p.id === 'user') { userScoreChange = 0; userRankMsg = "速度太慢囉"; }
+                    }
+                }
+
+                // Apply score and bounds check
+                p.score += scoreDiff;
+                // Floor at 0 for visual reasons, though rules say "deducted to 0 = eliminated", we handle win/loss check later
+                if(p.score < 0) p.score = 0; 
+                
+                updatePlayerBar(p.id, p.score, p.textEl, p.el);
+                createScorePopup(p.id, popText, popColor);
+            });
+
+            // 4. Show User Result Overlay
+            showRoundOverlay(userCorrect, isTimeout, userScoreChange, userRankMsg);
+
+            // 5. Check Game Over or next round
+            setTimeout(() => {
+                checkGameOver();
+            }, 2500); // Wait for overlay to be read
+        }
+
+        function updatePlayerBar(playerId, newScore, textElId, barElId) {
+            const pct = Math.min(100, Math.max(0, (newScore / TARGET_SCORE) * 100));
+            const barEl = document.getElementById(barElId);
+            const textEl = document.getElementById(textElId);
+            
+            barEl.style.width = `${pct}%`;
+            barEl.textContent = newScore;
+            textEl.textContent = `${newScore} / ${TARGET_SCORE}`;
+
+            // Pulse effect
+            barEl.parentElement.classList.add('ring-2', 'ring-indigo-300', 'ring-offset-1');
+            setTimeout(() => barEl.parentElement.classList.remove('ring-2', 'ring-indigo-300', 'ring-offset-1'), 400);
+        }
+
+        function showFeedback(playerId, text, colorClass) {
+            const fb = document.getElementById(`${playerId}Feedback`);
+            fb.textContent = text;
+            fb.className = `absolute top-2 right-4 text-sm font-bold transition-opacity ${colorClass}`;
+            fb.style.opacity = 1;
+            setTimeout(() => fb.style.opacity = 0, 1500);
+        }
+
+        function createScorePopup(playerId, text, colorClass) {
+            const container = document.getElementById(`${playerId}ProgressBar`).parentElement.parentElement;
+            const popup = document.createElement('div');
+            popup.className = `score-popup ${colorClass} right-4 top-10`;
+            popup.textContent = text;
+            container.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function showRoundOverlay(userCorrect, isTimeout, scoreChange, rankMsg) {
+            els.overlay.classList.remove('hidden');
+            els.overlay.classList.add('flex');
+            
+            if (userCorrect) {
+                els.overlayIcon.textContent = '✅';
+                els.overlayText.textContent = '答對了！';
+                els.overlayText.className = 'text-3xl font-black text-green-600 mb-1';
+                els.overlayDetail.textContent = `${rankMsg} (${scoreChange > 0 ? '+' : ''}${scoreChange}分)`;
+                els.overlayDetail.className = 'text-xl font-bold text-green-700';
+                els.correctAnswerDisplay.classList.add('hidden');
+            } else {
+                els.keyword.classList.add('shake');
+                els.overlayIcon.textContent = isTimeout ? '⏰' : '❌';
+                els.overlayText.textContent = isTimeout ? '時間到！' : '答錯了！';
+                els.overlayText.className = 'text-3xl font-black text-red-600 mb-1';
+                els.overlayDetail.textContent = `${rankMsg} (-15分)`;
+                els.overlayDetail.className = 'text-xl font-bold text-red-700';
+                
+                // Show correct answer
+                els.correctAnswerDisplay.classList.remove('hidden');
+                els.correctAnswerDisplay.querySelector('span').textContent = state.currentQuestion.type;
+            }
+        }
+
+        function checkGameOver() {
+            let winners = [];
+            let isUserDead = state.players.user.score <= 0;
+
+            Object.values(state.players).forEach(p => {
+                if (p.score >= TARGET_SCORE) {
+                    winners.push(p);
+                }
+            });
+
+            if (winners.length > 0 || isUserDead) {
+                showGameOver(winners, isUserDead);
+            } else {
+                startNextRound();
+            }
+        }
+
+        function showGameOver(winners, isUserDead) {
+            screens.game.classList.add('hidden');
+            screens.gameOver.classList.remove('hidden');
+
+            const title = document.getElementById('gameOverTitle');
+            const msg = document.getElementById('gameOverMsg');
+            const icon = document.getElementById('gameOverIcon');
+
+            document.getElementById('finalScoreUser').textContent = state.players.user.score;
+            document.getElementById('finalScoreAi1').textContent = state.players.ai1.score;
+            document.getElementById('finalScoreAi2').textContent = state.players.ai2.score;
+
+            if (isUserDead) {
+                icon.textContent = '💀';
+                title.textContent = '挑戰失敗';
+                title.className = 'text-3xl font-black mb-2 text-red-600';
+                msg.textContent = '你的分數歸零了，芭蕾之路需要更多練習！';
+            } else {
+                // Check if user is among winners
+                const userWon = winners.some(w => w.id === 'user');
+                if (userWon) {
+                    // Check if tie (someone else also reached 150 in same round)
+                    if (winners.length > 1) {
+                        // Tie breaker: highest score wins
+                        winners.sort((a,b) => b.score - a.score);
+                        if (winners[0].id === 'user') {
+                            icon.textContent = '🎉';
+                            title.textContent = '勝利！';
+                            title.className = 'text-3xl font-black mb-2 text-yellow-500';
+                            msg.textContent = '你以最高分率先達到目標，芭蕾大師就是你！';
+                        } else {
+                            icon.textContent = '🥈';
+                            title.textContent = '惜敗';
+                            title.className = 'text-3xl font-black mb-2 text-slate-700';
+                            msg.textContent = `雖然達標，但 ${winners[0].name} 分數更高！`;
+                        }
+                    } else {
+                        icon.textContent = '👑';
+                        title.textContent = '大獲全勝！';
+                        title.className = 'text-3xl font-black mb-2 text-yellow-500';
+                        msg.textContent = '恭喜你率先達到 150 分！';
+                    }
+                } else {
+                    icon.textContent = '💔';
+                    title.textContent = '挑戰失敗';
+                    title.className = 'text-3xl font-black mb-2 text-slate-700';
+                    msg.textContent = `${winners[0].name} 率先達到了 150 分！`;
+                }
+            }
+        }
+
+        // Initialize on load
+        window.onload = initGame;
+    </script>
+</body>
+</html>
