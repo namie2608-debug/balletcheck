@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>急速芭蕾挑戰 Ballet Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a1a2e; /* 深色電玩背景 */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(255, 0, 128, 0.1), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 255, 0.1), transparent 25%);
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .font-pixel {
+            font-family: 'Press Start 2P', 'Noto Sans TC', cursive;
+            line-height: 1.5;
+        }
+
+        /* 霓虹發光效果標題 */
+        .neon-title {
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #ff00de,
+                0 0 40px #ff00de,
+                0 0 80px #ff00de;
+            animation: pulsate 1.5s infinite alternate;
+        }
+
+        @keyframes pulsate {
+            100% {
+                text-shadow: 
+                0 0 4px #fff,
+                0 0 11px #fff,
+                0 0 19px #ff00de,
+                0 0 40px #ff00de,
+                0 0 80px #ff00de;
+            }
+            0% {
+                text-shadow: 
+                0 0 2px #fff,
+                0 0 4px #fff,
+                0 0 6px #ff00de,
+                0 0 10px #ff00de,
+                0 0 45px #ff00de;
+            }
+        }
+
+        /* 遊戲按鈕樣式 */
+        .btn-game {
+            transition: all 0.2s ease-in-out;
+            border-bottom-width: 4px;
+            text-transform: uppercase;
+        }
+        
+        .btn-game:hover {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+            filter: brightness(1.1);
+        }
+
+        .btn-game:active {
+            transform: translateY(4px);
+            border-bottom-width: 0px;
+        }
+
+        /* 浮動動畫 */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Modal 隱藏/顯示 */
+        .modal {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- 標題區 -->
+    <header class="text-center mb-12 w-full max-w-4xl floating">
+        <h2 class="text-xl md:text-2xl text-cyan-400 font-bold mb-2 tracking-widest">教材設計：黃翊倫</h2>
+        <h1 class="text-4xl md:text-6xl font-pixel neon-title mt-4 mb-6 leading-tight">急速芭蕾挑戰<br><span class="text-2xl md:text-4xl text-yellow-300">Ballet Check</span></h1>
+    </header>
+
+    <!-- 主要選單區 -->
+    <main class="w-full max-w-3xl bg-gray-900 bg-opacity-70 p-8 rounded-3xl border-4 border-cyan-500 shadow-[0_0_15px_rgba(0,255,255,0.5)]">
+        
+        <!-- 教學關卡 -->
+        <div class="mb-10 text-center">
+            <button class="btn-game w-full md:w-2/3 bg-gradient-to-r from-green-400 to-emerald-600 border-green-700 text-white font-bold py-4 px-8 rounded-2xl text-2xl shadow-lg shadow-green-500/50">
+                🚀 進入教學關卡
+            </button>
+        </div>
+
+        <hr class="border-gray-600 my-8 border-dashed">
+
+        <!-- 遊戲設定區 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- 選擇對戰人數 -->
+            <div class="bg-gray-800 p-6 rounded-2xl border-2 border-pink-500">
+                <h3 class="text-xl font-bold text-pink-400 mb-4 text-center font-pixel text-sm md:text-base">選擇對戰人數</h3>
+                <div class="flex flex-col gap-3">
+                    <button class="btn-game bg-pink-500 hover:bg-pink-400 border-pink-700 text-white font-bold py-3 px-4 rounded-xl">單人挑戰 (1P)</button>
+                    <button class="btn-game bg-purple-500 hover:bg-purple-400 border-purple-700 text-white font-bold py-3 px-4 rounded-xl">雙人對戰 (2P)</button>
+                    <button class="btn-game bg-indigo-500 hover:bg-indigo-400 border-indigo-700 text-white font-bold py-3 px-4 rounded-xl">四人大亂鬥 (4P)</button>
+                </div>
+            </div>
+
+            <!-- 選擇難度 -->
+            <div class="bg-gray-800 p-6 rounded-2xl border-2 border-yellow-500">
+                <h3 class="text-xl font-bold text-yellow-400 mb-4 text-center font-pixel text-sm md:text-base">選擇難度</h3>
+                <div class="flex flex-col gap-4 justify-center h-full pb-8">
+                    <button class="btn-game bg-yellow-500 hover:bg-yellow-400 border-yellow-700 text-gray-900 font-extrabold py-4 px-4 rounded-xl text-xl">
+                        ⭐ Level 1 (新手)
+                    </button>
+                    <button class="btn-game bg-orange-500 hover:bg-orange-400 border-orange-700 text-white font-extrabold py-4 px-4 rounded-xl text-xl">
+                        ⭐⭐ Level 2 (進階)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 資料統計區 -->
+        <div class="mt-10 text-center">
+            <button id="openStatsBtn" class="btn-game bg-blue-600 hover:bg-blue-500 border-blue-800 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center mx-auto gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                班級錯題統計
+            </button>
+        </div>
+    </main>
+
+    <!-- 統計資料 Modal -->
+    <div id="statsModal" class="modal fixed inset-0 bg-black bg-opacity-80 z-50 items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border-4 border-blue-500 rounded-3xl w-full max-w-2xl overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.6)] transform scale-95 transition-transform duration-300" id="modalContent">
+            
+            <div class="bg-blue-600 p-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold font-pixel text-white">📊 班級錯題統計</h2>
+                <button id="closeStatsBtn" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full text-left text-gray-200 border-collapse">
+                    <thead>
+                        <tr class="bg-gray-700 text-blue-300 font-bold">
+                            <th class="p-3 border-b-2 border-gray-600 rounded-tl-lg">題目 (芭蕾動作)</th>
+                            <th class="p-3 border-b-2 border-gray-600">正確屬性</th>
+                            <th class="p-3 border-b-2 border-gray-600 text-center rounded-tr-lg">學生誤判次數</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Plié (蹲)</td>
+                            <td class="p-3">屈伸動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">15</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Tendu (擦地)</td>
+                            <td class="p-3">延伸動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">12</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Jeté (拋)</td>
+                            <td class="p-3">跳躍動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">8</td>
+                        </tr>
+                         <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
+                            <td class="p-3 font-semibold text-pink-300">Pirouette (旋轉)</td>
+                            <td class="p-3">旋轉動作</td>
+                            <td class="p-3 text-center text-red-400 font-bold text-xl">25</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 bg-gray-900 text-center text-sm text-gray-400">
+                資料更新時間：即時
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal 互動邏輯
+        const openStatsBtn = document.getElementById('openStatsBtn');
+        const closeStatsBtn = document.getElementById('closeStatsBtn');
+        const statsModal = document.getElementById('statsModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function openModal() {
+            statsModal.classList.add('active');
+            // 延遲一點點加入 scale-100 以觸發放大動畫
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            // 等待動畫結束後再隱藏
+            setTimeout(() => {
+                statsModal.classList.remove('active');
+            }, 300);
+        }
+
+        openStatsBtn.addEventListener('click', openModal);
+        closeStatsBtn.addEventListener('click', closeModal);
+
+        // 點擊 Modal 背景關閉
+        statsModal.addEventListener('click', (e) => {
+            if (e.target === statsModal) {
+                closeModal();
+            }
+        });
+        
+        // 幫所有的遊戲按鈕加上點擊音效的視覺回饋 (可視需求加入真實音效)
+        const gameButtons = document.querySelectorAll('.btn-game');
+        gameButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 如果不是開啟統計的按鈕，就加上一個簡單的閃爍效果表示已點擊
+                if(this.id !== 'openStatsBtn') {
+                    const originalBg = this.style.backgroundColor;
+                    this.style.filter = 'brightness(1.5)';
+                    setTimeout(() => {
+                        this.style.filter = '';
+                    }, 150);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
