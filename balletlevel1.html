@@ -85,17 +85,6 @@
             transform: translateY(2px);
             border-bottom-width: 2px;
         }
-
-        /* Modal 隱藏/顯示 */
-        .modal {
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .modal.active {
-            display: flex;
-            opacity: 1;
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center">
@@ -138,15 +127,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="mt-8 text-center">
-                <button id="openStatsBtn" class="btn-game bg-blue-600 hover:bg-blue-500 border-blue-800 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center mx-auto gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    班級錯題統計
-                </button>
             </div>
         </main>
     </div>
@@ -215,56 +195,6 @@
             <button id="btnResetToMenu" class="btn-game w-full bg-cyan-600 hover:bg-cyan-500 border-cyan-800 text-white font-bold py-4 px-10 rounded-2xl text-2xl">
                 🔄 回到主選單
             </button>
-        </div>
-    </div>
-
-    <!-- 統計資料 Modal -->
-    <div id="statsModal" class="modal fixed inset-0 bg-black bg-opacity-80 z-[100] items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-gray-800 border-4 border-blue-500 rounded-3xl w-full max-w-2xl overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.6)] transform scale-95 transition-transform duration-300" id="modalContent">
-            <div class="bg-blue-600 p-4 flex justify-between items-center">
-                <h2 class="text-xl md:text-2xl font-bold font-pixel text-white">📊 班級錯題統計</h2>
-                <button id="closeStatsBtn" class="text-white hover:text-gray-200 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </button>
-            </div>
-            <div class="p-4 md:p-6 overflow-x-auto">
-                <table class="w-full text-left text-gray-200 border-collapse min-w-[400px]">
-                    <thead>
-                        <tr class="bg-gray-700 text-blue-300 font-bold">
-                            <th class="p-3 border-b-2 border-gray-600 rounded-tl-lg">題目 (芭蕾動作)</th>
-                            <th class="p-3 border-b-2 border-gray-600">正確屬性</th>
-                            <th class="p-3 border-b-2 border-gray-600 text-center rounded-tr-lg">誤判次數</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-700">
-                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
-                            <td class="p-3 font-semibold text-pink-300">Plié (蹲)</td>
-                            <td class="p-3">屈伸動作</td>
-                            <td class="p-3 text-center text-red-400 font-bold text-xl">15</td>
-                        </tr>
-                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
-                            <td class="p-3 font-semibold text-pink-300">Tendu (擦地)</td>
-                            <td class="p-3">延伸動作</td>
-                            <td class="p-3 text-center text-red-400 font-bold text-xl">12</td>
-                        </tr>
-                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
-                            <td class="p-3 font-semibold text-pink-300">Jeté (拋)</td>
-                            <td class="p-3">跳躍動作</td>
-                            <td class="p-3 text-center text-red-400 font-bold text-xl">8</td>
-                        </tr>
-                        <tr class="hover:bg-gray-750 transition-colors bg-gray-800">
-                            <td class="p-3 font-semibold text-pink-300">Pirouette (旋轉)</td>
-                            <td class="p-3">旋轉動作</td>
-                            <td class="p-3 text-center text-red-400 font-bold text-xl">25</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="p-4 bg-gray-900 text-center text-sm text-gray-400">
-                資料更新時間：即時
-            </div>
         </div>
     </div>
 
@@ -673,29 +603,6 @@
             showScreen('screenGameOver');
         }
         window.handleGameOver = handleGameOver;
-
-        // --- 統計數據彈窗控制 ---
-        var statsModal = document.getElementById('statsModal');
-        var modalContent = document.getElementById('modalContent');
-
-        document.getElementById('openStatsBtn').addEventListener('click', () => {
-            statsModal.classList.add('active');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95');
-                modalContent.classList.add('scale-100');
-            }, 10);
-        });
-
-        document.getElementById('closeStatsBtn').addEventListener('click', closeModal);
-        statsModal.addEventListener('click', (e) => {
-            if (e.target === statsModal) closeModal();
-        });
-
-        function closeModal() {
-            modalContent.classList.remove('scale-100');
-            modalContent.classList.add('scale-95');
-            setTimeout(() => { statsModal.classList.remove('active'); }, 300);
-        }
 
         // 所有按鈕點擊微反饋 (防止觸控延遲)
         document.addEventListener('pointerdown', (e) => {
